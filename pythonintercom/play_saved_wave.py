@@ -1,0 +1,42 @@
+#!/usr/bin/python2
+"""PyAudio Example: Play a WAVE file."""
+
+import conf
+import pyaudio
+import wave
+import sys
+import time;
+import socket
+
+CHUNK = 1024
+
+if len(sys.argv) < 3:
+    print("Plays a wave file.\n\nUsage: %s filename.wav endip" % sys.argv[0])
+    sys.exit(-1)
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
+
+wf = wave.open(sys.argv[1], 'rb')
+
+endip = sys.argv[2];
+
+p = pyaudio.PyAudio()
+
+stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                channels=wf.getnchannels(),
+                rate=wf.getframerate(),
+                output=True)
+
+data = wf.readframes(CHUNK)
+
+while data != '':
+    sock.sendto(data, (endip, conf.commport))
+    data = wf.readframes(CHUNK)
+
+stream.stop_stream()
+stream.close()
+
+p.terminate()
+
+sock.sendto('hangup', (endip, conf.callport));
+
